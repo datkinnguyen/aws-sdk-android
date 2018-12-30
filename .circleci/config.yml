@@ -27,7 +27,6 @@ jobs:
 
     steps:
       - checkout
-
       - run:
           name: run unit tests
           command: |
@@ -38,7 +37,6 @@ jobs:
           
       - store_artifacts:
           path: test_results
-
 
   release_tag:
     working_directory: ~/code
@@ -101,6 +99,7 @@ jobs:
             git add docs/reference
             git commit -m "Update document via CircleCI"
             git push -q https://${GITHUB_TOKEN}@github.com/aws-amplify/aws-sdk-android.git  
+
   tag_doc:
     docker:
       - image: circleci/android:api-27-alpha
@@ -109,13 +108,10 @@ jobs:
     steps:
       - checkout   
       - run:
-          name: checkout gh-pages
+          name: Add documentation tags to gh-pages
           command: |
-            git config --local user.name "${GITHUB_USER}"
             git checkout  gh-pages
-            echo "${GITHUB_USER}"
-            git tag -a v1.4 -m "tag document"
-            echo "git push ..."
+            git tag -a ${CIRCLE_TAG}_api_docs  -m "Add documentation tags to version ${CIRCLE_TAG}"            
             git push --tags -q https://${GITHUB_TOKEN}@github.com/sunchunqiang/aws-sdk-android.git     
 
   release_maven:
@@ -123,9 +119,13 @@ jobs:
       xcode: "10.1.0"
 
     steps:
-      - checkout
-      - restore_cache:
-          key: jars-{{ checksum "build.gradle" }}-{{ checksum  "build.gradle" }}
+      - checkout   
+      - run: 
+          name: test
+          command: |
+            fff="${SonatypePassword}"
+            echo "$fff"
+ 
       - run:
           name: install android sdk tools
           command: |
@@ -138,17 +138,26 @@ jobs:
       - run:
           name: install android build tools
           command: |
-            echo "${HOME}"
-            echo "$JAVA_HOME"
-            echo "$ANDROID_HOME"
-            echo "$PATH"                    
+            sudo yes | /usr/local/bin/sdkmanager "platforms;android-21" "platforms;android-27" "build-tools;27.0.1"  "extras;google;m2repository" "extras;android;m2repository"          
+            /usr/local/bin/sdkmanager --update
+      - run:
+          name: Set environment
+          command: |
+            echo ~
+            ls /usr/local/share/android-sdk
+            ANDROID_HOME="/usr/local/share/android-sdk"
+            echo 'export ANDROID_HOME="/usr/local/share/android-sdk"' >> $BASH_ENV
+            echo "Home: ${HOME}"
+            echo "JAVA_HOME: $JAVA_HOME"
+            echo "ANDROID_HOME: $ANDROID_HOME"
+            echo "PATH: $PATH"                    
             echo 'export ANDROID_PLATFORM="27"' >> $BASH_ENV
             echo 'export ANDROID_BUILDTOOL_VERSION="27.0.1"' >> $BASH_ENV
+      - run:
+          name: Instal gpg
+          command: |
+            brew install gnupg
 
-            echo "build-tools;$ANDROID_BUILDTOOL_VERSION" 
-
-            /usr/local/bin/sdkmanager "platforms;android-21" "build-tools;27.0.1"  "extras;google;m2repository" "extras;android;m2repository"          
-                
       - run:
           name: download gpghome
           command: |
@@ -164,10 +173,6 @@ jobs:
             brew install maven
 
       - run:
-          name: Download Dependencies
-          command: bash gradlew androidDependencies
-
-      - run:
           name: publish to maven
           command: |
             echo "${HOME}"
@@ -181,13 +186,7 @@ workflows:
   version: 2
   build_and_test:
     jobs: 
-      - release_maven:
-          filters:
-            branches:
-              ignore: /gh-.*/
-  #     - unittest:
-  #         requires:
-  #           - build
+      - release_maven
 
   # release_sdk:
   #   jobs: 

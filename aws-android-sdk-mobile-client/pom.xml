@@ -113,7 +113,6 @@
         <configuration>
           <sdk>
             <platform>${env.ANDROID_PLATFORM}</platform>
-            <buildTools>${env.ANDROID_BUILDTOOL_VERSION}</buildTools>
           </sdk>
         </configuration>
       </plugin>
