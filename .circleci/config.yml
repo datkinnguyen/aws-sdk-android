@@ -123,8 +123,11 @@ jobs:
       - run: 
           name: test
           command: |
-            fff="${SonatypePassword}"
-            echo "$fff"
+            username="${CIRCLE_PROJECT_USERNAME}"
+            repositoryname="${CIRCLE_PROJECT_REPONAME}"
+            echo "username:$username"
+            echo "repositiory:$repositoryname"
+            circleci step halt
  
       - run:
           name: install android sdk tools
@@ -161,7 +164,7 @@ jobs:
       - run:
           name: download gpghome
           command: |
-            aws s3 cp s3://gpghome-csun/gpghome.zip gpghome.zip
+            aws s3 cp s3://android-circleci-payload/gpghome/gpghome.zip gpghome.zip
             unzip -a gpghome.zip
             echo "gpghome contents:"
             ls gpghome
